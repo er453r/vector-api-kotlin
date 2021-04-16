@@ -11,7 +11,8 @@ class VectorAPI(
     ip:String,
     name:String,
     guid:String,
-    certPath:String) {
+    certPath:String
+) {
     private var blocked = false
     private val queue = ArrayList<VectorCommand>()
     private val vectorCallCredentials = VectorCallCredentials(guid)
@@ -106,6 +107,36 @@ class VectorAPI(
         processQueue()
     }
 
+
+    private fun forward(){
+        addToQueue(
+            VectorCommand(
+                blocking = false,
+            ){
+                println("Say text")
+
+                stub.withCallCredentials(vectorCallCredentials)
+                    .driveStraight(
+                        Messages.DriveStraightRequest.newBuilder()
+                            .setDistMm(100.0f)
+                            .setNumRetries(1)
+                            .setSpeedMmps(10.0f)
+                            .setShouldPlayAnimation(true)
+                            .setIdTag(0)
+                            .build(), VectorStreamObserver<Messages.DriveStraightResponse>(
+                            name = "drive",
+                            onCompleted = {
+                                print("Done driving")
+                            }
+                        )
+                    )
+            }
+        )
+
+        processQueue()
+    }
+
+
     private fun say(){
         addToQueue(
             VectorCommand(
@@ -167,8 +198,9 @@ class VectorAPI(
         initSDK()
 
         assumeControl()
+        forward()
         say()
-        releaseControl()
+//        releaseControl()
 
         while (queue.size != 0){
             println("holding off shutdown...")
